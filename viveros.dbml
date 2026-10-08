@@ -122,7 +122,7 @@ Table bonificacion {
     (dni_cliente_plus, mes, anio) [unique]
   }
 
-  Note: "Recompensas mensuales acumuladas por socios Tajinaste Plus"
+  Note: "Entidad débil dependiente de Cliente Plus para acumular recompensas mensuales"
 }
 
 // ----------------------------------------------------------------------------
@@ -154,30 +154,138 @@ Table detalle_pedido {
 }
 
 // ----------------------------------------------------------------------------
-// REGLAS DE INTEGRIDAD REFERENCIAL (CLAVES FORÁNEAS)
+// REGLAS DE INTEGRIDAD REFERENCIAL Y CARDINALIDADES CON MODIFICADOR OPCIONAL (?)
 // ----------------------------------------------------------------------------
 
-// Un vivero tiene muchas zonas. Si se borra un vivero con zonas, RESTRICT evita la pérdida
+// Un vivero tiene 1 o más zonas obligatorias
 Ref: zona.id_vivero > vivero.id_vivero [delete: restrict, update: cascade]
 
-// Control de stock: borrado en cascada si la zona desaparece, restrict si el producto sigue catalogado
-Ref: stock_zona.id_zona > zona.id_zona [delete: cascade, update: cascade]
-Ref: stock_zona.id_producto > producto.id_producto [delete: restrict, update: cascade]
+// Stock: una zona o producto pueden tener opcionalmente stock (?)
+Ref: stock_zona.id_zona ?> zona.id_zona [delete: cascade, update: cascade]
+Ref: stock_zona.id_producto ?> producto.id_producto [delete: restrict, update: cascade]
 
-// Histórico de puestos
-Ref: historico_empleado_zona.dni_empleado > empleado.dni [delete: cascade, update: cascade]
-Ref: historico_empleado_zona.id_zona > zona.id_zona [delete: restrict, update: cascade]
+// Histórico: un empleado o zona pueden tener opcionalmente destinos registrados (?)
+Ref: historico_empleado_zona.dni_empleado ?> empleado.dni [delete: cascade, update: cascade]
+Ref: historico_empleado_zona.id_zona ?> zona.id_zona [delete: restrict, update: cascade]
 
-// Jerarquía de especialización 1:1
-Ref: cliente_plus.dni - cliente.dni [delete: cascade, update: cascade]
+// Jerarquía 1:1: un cliente puede ser opcionalmente Plus (-?)
+Ref: cliente_plus.dni -? cliente.dni [delete: cascade, update: cascade]
 
-// Bonificaciones acumuladas por socio Plus
-Ref: bonificacion.dni_cliente_plus > cliente_plus.dni [delete: cascade, update: cascade]
+// Entidad débil: un cliente Plus puede tener 0 o muchas bonificaciones (?>)
+// La bonificación pertenece obligatoriamente a un cliente Plus y se borra en cascada
+Ref: bonificacion.dni_cliente_plus ?> cliente_plus.dni [delete: cascade, update: cascade]
 
-// Pedidos vinculados a cliente Plus y empleado responsable
-Ref: pedido.dni_cliente_plus > cliente_plus.dni [delete: restrict, update: cascade]
-Ref: pedido.dni_empleado_responsable > empleado.dni [delete: restrict, update: cascade]
+// Pedidos: un cliente Plus o empleado pueden tener opcionalmente pedidos asociados (?>)
+Ref: pedido.dni_cliente_plus ?> cliente_plus.dni [delete: restrict, update: cascade]
+Ref: pedido.dni_empleado_responsable ?> empleado.dni [delete: restrict, update: cascade]
 
-// Detalle del pedido: al borrar un pedido se borran sus líneas en cascada
+// Detalle de pedido: un producto puede figurar opcionalmente en pedidos (?>)
 Ref: detalle_pedido.id_pedido > pedido.id_pedido [delete: cascade, update: cascade]
-Ref: detalle_pedido.id_producto > producto.id_producto [delete: restrict, update: cascade]
+Ref: detalle_pedido.id_producto ?> producto.id_producto [delete: restrict, update: cascade]
+
+// ============================================================================
+// DATOS DE PRUEBA (RECORDS) - AL MENOS 5 FILAS POR TABLA
+// ============================================================================
+
+Records vivero(id_vivero, nombre, latitud, longitud, direccion) {
+  1, 'Vivero Tacoronte Norte', 28.481234, -16.415678, 'Carretera General del Norte, km 15, Tacoronte'
+  2, 'Vivero Valle de La Orotava', 28.391100, -16.523400, 'Camino El Bosque 12, La Orotava'
+  3, 'Vivero Costa Adeje', 28.125600, -16.732100, 'Avenida de los Viveros 4, Adeje'
+  4, 'Vivero Candelaria Sur', 28.354100, -16.371200, 'Calle Las Caletillas 8, Candelaria'
+  5, 'Vivero San Cristóbal', 28.487600, -16.315400, 'Camino San Lázaro 45, La Laguna'
+}
+
+Records zona(id_zona, id_vivero, nombre, latitud, longitud) {
+  101, 1, 'Zona Exterior Plantas Autóctonas', 28.481300, -16.415710
+  102, 1, 'Almacén Central Tacoronte', 28.481210, -16.415650
+  201, 2, 'Invernadero Climatizado Flores', 28.391150, -16.523450
+  301, 3, 'Exposición Plantas Tropicales', 28.125650, -16.732150
+  401, 4, 'Zona Venta y Decoración Exterior', 28.354150, -16.371250
+  501, 5, 'Almacén de Herramientas y Sustratos', 28.487650, -16.315450
+}
+
+Records producto(id_producto, nombre, tipo, precio_unitario, descripcion) {
+  'PRD-PLANT-01', 'Drago Canario (Dracaena draco)', 'Planta', 28.50, 'Ejemplar joven en maceta de 25 cm, especie autóctona'
+  'PRD-PLANT-02', 'Palmera Canaria (Phoenix canariensis)', 'Planta', 45.00, 'Palmera canaria de 1 metro de altura, adaptada a exterior'
+  'PRD-JARD-01', 'Tijeras de Podar Ergonómicas Pro', 'Jardinería', 18.75, 'Tijeras de acero inoxidable con mango antideslizante'
+  'PRD-JARD-02', 'Sustrato Universal Volcánico 50L', 'Jardinería', 9.20, 'Sustrato enriquecido con picón volcánico y materia orgánica'
+  'PRD-DECO-01', 'Maceta Artesanal de Barro 40cm', 'Decoración', 22.00, 'Maceta de barro cocido hecha a mano, resistente a intemperie'
+  'PRD-DECO-02', 'Farol Solar LED de Jardín', 'Decoración', 14.50, 'Luminaria solar estanca para caminos y zonas exteriores'
+}
+
+Records stock_zona(id_zona, id_producto, cantidad_disponible) {
+  101, 'PRD-PLANT-01', 35
+  101, 'PRD-PLANT-02', 15
+  102, 'PRD-JARD-02', 120
+  201, 'PRD-PLANT-01', 20
+  301, 'PRD-DECO-01', 40
+  401, 'PRD-DECO-02', 60
+  501, 'PRD-JARD-01', 85
+}
+
+Records empleado(dni, num_seguridad_social, nombre, apellidos, telefono, email) {
+  '42345678Z', '381234567890', 'Laura', 'García Ramos', '+34600123456', 'lgarcia@tajinaste.com'
+  '43876543Y', '381234567891', 'Alejandro', 'Hernández Pérez', '+34611234567', 'ahernandez@tajinaste.com'
+  '78901234X', '381234567892', 'Marta', 'González Dorta', '+34622345678', 'mgonzalez@tajinaste.com'
+  '54123987W', '381234567893', 'Carlos', 'Mendoza Afonso', '+34633456789', 'cmendoza@tajinaste.com'
+  '45678912V', '381234567894', 'Elena', 'Brito Cabrera', '+34644567890', 'ebrito@tajinaste.com'
+}
+
+Records historico_empleado_zona(dni_empleado, id_zona, fecha_inicio, fecha_fin, tarea) {
+  '42345678Z', 101, '2023-01-10', '2023-06-30', 'Encargada de riego y aclimatación de planta autóctona'
+  '42345678Z', 102, '2023-07-01', null, 'Gestión de logística y stock en almacén central'
+  '43876543Y', 201, '2023-03-15', null, 'Control de clima y floración en invernadero'
+  '78901234X', 301, '2023-02-01', '2023-12-31', 'Asesoramiento técnico y venta directa de tropicales'
+  '78901234X', 401, '2024-01-01', null, 'Atención comercial y asesoría en decoración'
+  '54123987W', 501, '2023-05-01', null, 'Recepción de mercancías y preparación de pedidos'
+  '45678912V', 101, '2023-09-01', null, 'Mantenimiento de zonas exteriores y poda de temporada'
+}
+
+Records cliente(dni, nombre, apellidos, telefono, email) {
+  '78912345T', 'Carlos', 'Martín Pérez', '+34677987654', 'cmartin@gmail.com'
+  '43567890R', 'Beatriz', 'López Santana', '+34688112233', 'blopez@hotmail.com'
+  '54231987P', 'Diego', 'Navarro Curbelo', '+34699445566', 'dnavarro@yahoo.es'
+  '78654321M', 'Silvia', 'Rodríguez Mesa', '+34670223344', 'srodriguez@gmail.com'
+  '42112233K', 'Javier', 'Domínguez León', '+34680334455', 'jdominguez@outlook.com'
+  '55667788S', 'Patricia', 'Herrera Vega', '+34690445566', 'pherrera@gmail.com'
+}
+
+Records cliente_plus(dni, codigo_plus, fecha_ingreso) {
+  '78912345T', 'PLS-2023-001', '2023-02-15'
+  '43567890R', 'PLS-2023-045', '2023-04-10'
+  '54231987P', 'PLS-2023-112', '2023-07-01'
+  '78654321M', 'PLS-2024-019', '2024-01-20'
+  '42112233K', 'PLS-2024-088', '2024-03-05'
+}
+
+Records bonificacion(id_bonificacion, dni_cliente_plus, mes, anio, volumen_compras, importe_bonificado) {
+  1, '78912345T', 3, 2024, 345.50, 17.28
+  2, '78912345T', 4, 2024, 520.00, 26.00
+  3, '43567890R', 3, 2024, 185.00, 9.25
+  4, '54231987P', 4, 2024, 410.20, 20.51
+  5, '78654321M', 4, 2024, 98.00, 4.90
+}
+
+Records pedido(id_pedido, dni_cliente_plus, dni_empleado_responsable, fecha, importe_total, estado) {
+  1001, '78912345T', '42345678Z', '2024-03-10 10:30:00', 102.00, 'Completado'
+  1002, '43567890R', '78901234X', '2024-03-18 12:15:00', 89.50, 'Completado'
+  1003, '78912345T', '42345678Z', '2024-04-05 16:45:00', 135.00, 'Completado'
+  1004, '54231987P', '43876543Y', '2024-04-12 11:20:00', 45.00, 'Pendiente'
+  1005, '42112233K', '78901234X', '2024-04-20 09:50:00', 58.75, 'Cancelado'
+  1006, '78654321M', '42345678Z', '2024-04-22 17:10:00', 98.00, 'Completado'
+}
+
+Records detalle_pedido(id_pedido, id_producto, cantidad, precio_unitario_aplicado) {
+  1001, 'PRD-PLANT-01', 2, 28.50
+  1001, 'PRD-DECO-01', 2, 22.50
+  1002, 'PRD-JARD-01', 2, 18.75
+  1002, 'PRD-DECO-01', 2, 26.00
+  1003, 'PRD-PLANT-02', 3, 45.00
+  1004, 'PRD-PLANT-02', 1, 45.00
+  1005, 'PRD-JARD-01', 1, 18.75
+  1005, 'PRD-DECO-01', 1, 22.00
+  1005, 'PRD-JARD-02', 2, 9.00
+  1006, 'PRD-PLANT-01', 2, 28.50
+  1006, 'PRD-DECO-02', 2, 14.50
+  1006, 'PRD-JARD-02', 1, 12.00
+}
