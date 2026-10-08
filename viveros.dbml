@@ -168,8 +168,8 @@ Ref: stock_zona.id_producto ?> producto.id_producto [delete: restrict, update: c
 Ref: historico_empleado_zona.dni_empleado ?> empleado.dni [delete: cascade, update: cascade]
 Ref: historico_empleado_zona.id_zona ?> zona.id_zona [delete: restrict, update: cascade]
 
-// Jerarquía 1:1: un cliente puede ser opcionalmente Plus (-?)
-Ref: cliente_plus.dni -? cliente.dni [delete: cascade, update: cascade]
+// Jerarquía 1:1: cliente_plus hereda y referencia a cliente
+Ref: cliente_plus.dni > cliente.dni [delete: cascade, update: cascade]
 
 // Entidad débil: un cliente Plus puede tener 0 o muchas bonificaciones (?>)
 // La bonificación pertenece obligatoriamente a un cliente Plus y se borra en cascada
