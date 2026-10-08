@@ -1,0 +1,183 @@
+// ============================================================================
+// Práctica 4: Modelo Relacional - Tajinaste S.A. (Viveros)
+// Asignatura: Administración y Diseño de Bases de Datos (ADBD) - ULL
+// Formato: DBML (Database Markup Language) para dbdiagram.io y VS Code
+// ============================================================================
+
+Project viveros {
+  database_type: 'PostgreSQL'
+  Note: 'Esquema relacional para la gestión de viveros, stock, empleados, clientes Plus y pedidos de Tajinaste S.A.'
+}
+
+// ----------------------------------------------------------------------------
+// 1. INFRAESTRUCTURA: VIVEROS Y ZONAS
+// ----------------------------------------------------------------------------
+
+Table vivero {
+  id_vivero int [pk, note: "Identificador unívoco del vivero"]
+  nombre varchar(100) [not null]
+  latitud decimal(9,6) [not null, note: "Coordenada WGS84 [-90.0, 90.0]"]
+  longitud decimal(9,6) [not null, note: "Coordenada WGS84 [-180.0, 180.0]"]
+  direccion varchar(200) [not null]
+
+  Note: "Instalaciones físicas independientes donde opera Tajinaste S.A."
+}
+
+Table zona {
+  id_zona int [pk, note: "Identificador único de la zona"]
+  id_vivero int [not null, note: "Vivero al que pertenece la zona (1:N)"]
+  nombre varchar(50) [not null, note: "Exterior, Almacén, Invernadero, etc."]
+  latitud decimal(9,6) [not null]
+  longitud decimal(9,6) [not null]
+
+  Note: "Subdivisiones operativas de un vivero con georreferenciación propia"
+}
+
+// ----------------------------------------------------------------------------
+// 2. PRODUCTOS Y CONTROL DE STOCK POR ZONA
+// ----------------------------------------------------------------------------
+
+Table producto {
+  id_producto varchar(15) [pk, note: "Código de catálogo del producto"]
+  nombre varchar(100) [not null]
+  tipo varchar(30) [not null, note: "Planta, Jardinería, Decoración"]
+  precio_unitario decimal(8,2) [not null, note: "Precio base >= 0.00"]
+  descripcion text
+
+  Note: "Bienes comercializados en la red de viveros"
+}
+
+Table stock_zona {
+  id_zona int [not null]
+  id_producto varchar(15) [not null]
+  cantidad_disponible int [not null, default: 0, note: "Unidades en stock >= 0"]
+
+  indexes {
+    (id_zona, id_producto) [pk]
+  }
+
+  Note: "Relación M:N almacena entre Zona y Producto"
+}
+
+// ----------------------------------------------------------------------------
+// 3. EMPLEADOS E HISTÓRICO DE DESTINOS
+// ----------------------------------------------------------------------------
+
+Table empleado {
+  dni varchar(9) [pk, note: "NIF/NIE del empleado"]
+  num_seguridad_social varchar(12) [not null, unique]
+  nombre varchar(50) [not null]
+  apellidos varchar(100) [not null]
+  telefono varchar(15) [not null]
+  email varchar(100) [not null, unique]
+
+  Note: "Plantilla de trabajadores de la empresa"
+}
+
+Table historico_empleado_zona {
+  dni_empleado varchar(9) [not null]
+  id_zona int [not null]
+  fecha_inicio date [not null, note: "Inicio del destino temporal"]
+  fecha_fin date [note: "NULL si es el puesto activo actual"]
+  tarea varchar(100) [not null, note: "Función asignada (riego, almacén, venta, etc.)"]
+
+  indexes {
+    (dni_empleado, id_zona, fecha_inicio) [pk]
+  }
+
+  Note: "Relación M:N histórica trabaja en entre Empleado y Zona"
+}
+
+// ----------------------------------------------------------------------------
+// 4. CLIENTES Y PROGRAMA TAJINASTE PLUS (JERARQUÍA DE ESPECIALIZACIÓN)
+// ----------------------------------------------------------------------------
+
+Table cliente {
+  dni varchar(9) [pk, note: "NIF/NIE del cliente"]
+  nombre varchar(50) [not null]
+  apellidos varchar(100) [not null]
+  telefono varchar(15) [not null]
+  email varchar(100) [not null, unique]
+
+  Note: "Superclase: Clientes generales registrados"
+}
+
+Table cliente_plus {
+  dni varchar(9) [pk, note: "Hereda la PK de cliente (relación 1:1)"]
+  codigo_plus varchar(20) [not null, unique, note: "Número de tarjeta de socio"]
+  fecha_ingreso date [not null, note: "Fecha de adhesión al programa de fidelización"]
+
+  Note: "Subclase especializada para socios del programa Tajinaste Plus"
+}
+
+Table bonificacion {
+  id_bonificacion int [pk, increment, note: "Clave técnica autoincremental"]
+  dni_cliente_plus varchar(9) [not null]
+  mes int [not null, note: "Mes de cálculo (1 a 12)"]
+  anio int [not null, note: "Año de cálculo"]
+  volumen_compras decimal(10,2) [not null, default: 0.00, note: "Total compras del mes >= 0.00"]
+  importe_bonificado decimal(8,2) [not null, default: 0.00, note: "Saldo a favor concedido >= 0.00"]
+
+  indexes {
+    (dni_cliente_plus, mes, anio) [unique]
+  }
+
+  Note: "Recompensas mensuales acumuladas por socios Tajinaste Plus"
+}
+
+// ----------------------------------------------------------------------------
+// 5. PEDIDOS Y LÍNEAS DE VENTA
+// ----------------------------------------------------------------------------
+
+Table pedido {
+  id_pedido int [pk, note: "Código secuencial del pedido"]
+  dni_cliente_plus varchar(9) [not null, note: "Cliente Plus que realiza el pedido"]
+  dni_empleado_responsable varchar(9) [not null, note: "Único empleado responsable de la venta"]
+  fecha timestamp [not null, default: `now()`]
+  importe_total decimal(10,2) [not null, default: 0.00, note: "Atributo derivado del detalle de pedido"]
+  estado varchar(20) [not null, default: "Pendiente", note: "Pendiente, Completado, Cancelado"]
+
+  Note: "Pedidos realizados por socios Tajinaste Plus y gestionados por empleados"
+}
+
+Table detalle_pedido {
+  id_pedido int [not null]
+  id_producto varchar(15) [not null]
+  cantidad int [not null, note: "Unidades compradas > 0"]
+  precio_unitario_aplicado decimal(8,2) [not null, note: "Precio histórico al momento de la venta"]
+
+  indexes {
+    (id_pedido, id_producto) [pk]
+  }
+
+  Note: "Relación M:N contiene entre Pedido y Producto"
+}
+
+// ----------------------------------------------------------------------------
+// REGLAS DE INTEGRIDAD REFERENCIAL (CLAVES FORÁNEAS)
+// ----------------------------------------------------------------------------
+
+// Un vivero tiene muchas zonas. Si se borra un vivero con zonas, RESTRICT evita la pérdida
+Ref: zona.id_vivero > vivero.id_vivero [delete: restrict, update: cascade]
+
+// Control de stock: borrado en cascada si la zona desaparece, restrict si el producto sigue catalogado
+Ref: stock_zona.id_zona > zona.id_zona [delete: cascade, update: cascade]
+Ref: stock_zona.id_producto > producto.id_producto [delete: restrict, update: cascade]
+
+// Histórico de puestos
+Ref: historico_empleado_zona.dni_empleado > empleado.dni [delete: cascade, update: cascade]
+Ref: historico_empleado_zona.id_zona > zona.id_zona [delete: restrict, update: cascade]
+
+// Jerarquía de especialización 1:1
+Ref: cliente_plus.dni - cliente.dni [delete: cascade, update: cascade]
+
+// Bonificaciones acumuladas por socio Plus
+Ref: bonificacion.dni_cliente_plus > cliente_plus.dni [delete: cascade, update: cascade]
+
+// Pedidos vinculados a cliente Plus y empleado responsable
+Ref: pedido.dni_cliente_plus > cliente_plus.dni [delete: restrict, update: cascade]
+Ref: pedido.dni_empleado_responsable > empleado.dni [delete: restrict, update: cascade]
+
+// Detalle del pedido: al borrar un pedido se borran sus líneas en cascada
+Ref: detalle_pedido.id_pedido > pedido.id_pedido [delete: cascade, update: cascade]
+Ref: detalle_pedido.id_producto > producto.id_producto [delete: restrict, update: cascade]
