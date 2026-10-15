@@ -1,10 +1,6 @@
 # Práctica 4: Modelo Relacional y Diseño Físico en PostgreSQL
-## Tajinaste S.A. (Red de Viveros)
 
-* **Asignatura:** Administración y Diseño de Bases de Datos (ADBD)
-* **Titulación:** Grado en Ingeniería Informática — Universidad de La Laguna (ULL)
-* **Curso Académico:** 2026-2027
-* **Autor:** Marcos Llinares ([marcosllinares](https://github.com/marcosllinares))
+* **Autor:** Marcos Llinares ([marcosllinares](https://github.com/marcosllinares)) - alu0100972443
 * **Repositorio:** [ADBD-P4](https://github.com/marcosllinares/ADBD-P4)
 
 ---
@@ -15,9 +11,7 @@
 
 ![Modelo Entidad-Relación](Entidad-Relacion-Viveros.png)
 
-* 📄 **Diagrama editable:** [Descargar / Ver archivo editable draw.io (Entidad-Relacion-Viveros.drawio)](Entidad-Relacion-Viveros.drawio)
-
----
+* 📄 **Diagrama drawio:** [Entidad-Relacion-Viveros.drawio](Entidad-Relacion-Viveros.drawio)
 
 ### 1.2. Modelo Relacional (Lógico)
 
@@ -337,19 +331,15 @@ DELETE FROM cliente WHERE dni = '99999999K';
 
 ---
 
-## 7. Instrucciones de Despliegue y Ejecución
+## 7. Instrucciones para probarlo
 
-### 7.1. Prerrequisitos
-* PostgreSQL 14+ (probado en PostgreSQL 18.6 Homebrew en macOS).
-* Cliente de terminal `psql`.
+### 7.1. Ejecución del Script Principal
 
-### 7.2. Ejecución del Script Principal
-Para crear la base de datos `viveros`, construir las tablas, triggers, restricciones y cargar los datos de prueba:
 ```bash
 psql postgres -f viveros.sql
 ```
 
-### 7.3. Comprobación de Tablas
+### 7.2. Comprobación de Tablas
 Para visualizar de forma ordenada el contenido de todas las tablas:
 ```bash
 chmod +x consultar_tablas.sh
