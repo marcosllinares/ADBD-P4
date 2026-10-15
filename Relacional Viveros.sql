@@ -1,7 +1,6 @@
 -- ============================================================================
 -- PRÁCTICA 4: MODELO RELACIONAL Y POSTGRESQL - TAJINASTE S.A. (VIVEROS)
 -- Asignatura: Administración y Diseño de Bases de Datos (ADBD)
--- Grado en Ingeniería Informática - Universidad de La Laguna (ULL)
 -- ============================================================================
 
 -- ----------------------------------------------------------------------------

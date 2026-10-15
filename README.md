@@ -3,8 +3,6 @@
 * **Autor:** Marcos Llinares ([marcosllinares](https://github.com/marcosllinares)) - alu0100972443
 * **Repositorio:** [ADBD-P4](https://github.com/marcosllinares/ADBD-P4)
 
----
-
 ## 1. Diagramas del Sistema
 
 ### 1.1. Modelo Entidad-Relación (Conceptual)
@@ -19,9 +17,8 @@
 
 ---
 
-## 2. Descripción del Proyecto y Reglas de Transformación
+## 2. Reglas de Transformación
 
-La empresa ficticia **Tajinaste S.A.** opera una red de viveros con zonas delimitadas, personal asignado a tareas específicas, productos clasificados, programa de fidelización de clientes (**Tajinaste Plus**) con bonificaciones mensuales y registro de pedidos gestionados por empleados.
 
 ### Reglas de Transformación de E/R a Tablas Relacionales
 
@@ -124,7 +121,7 @@ GROUP BY p.dni_cliente_plus, EXTRACT(YEAR FROM p.fecha), EXTRACT(MONTH FROM p.fe
 
 ## 5. Salidas de las Consultas (`SELECT *` de cada tabla)
 
-A continuación se presentan las salidas reales obtenidas tras la ejecución del script de consulta `consultar_tablas.sh` sobre la base de datos `viveros`. Cada tabla cuenta con $\ge 5$ registros cubriendo todos los escenarios operativos requeridos:
+Salidas reales obtenidas tras la ejecución del script de consulta `consultar_tablas.sh`:
 
 ### 5.1. Tabla `vivero`
 ```
@@ -289,8 +286,11 @@ A continuación se presentan las salidas reales obtenidas tras la ejecución del
 ## 6. Demostración de Integridad Referencial y Operaciones DELETE
 
 ### 6.1. Ejemplo 1: Borrado en Cascada (`ON DELETE CASCADE`)
-* **Escenario:** Al eliminar un pedido, todas sus líneas asociadas en `detalle_pedido` deben suprimirse automáticamente sin dejar registros huérfanos.
-* **Demostración:** Se inserta el pedido temporal `9999` con dos líneas de detalle y se elimina:
+
+Al eliminar un pedido, todas sus líneas asociadas en `detalle_pedido` deben suprimirse automáticamente sin dejar registros huérfanos.
+
+Se inserta el pedido temporal `9999` con dos líneas de detalle y se elimina:
+
 ```sql
 INSERT INTO pedido (id_pedido, dni_cliente_plus, dni_empleado_responsable, fecha, estado)
 VALUES (9999, '78912345T', '42345678Z', '2024-05-01 10:00:00', 'Pendiente');
@@ -305,8 +305,10 @@ DELETE FROM pedido WHERE id_pedido = 9999;
 ```
 
 ### 6.2. Ejemplo 2: Integridad Restrictiva (`ON DELETE RESTRICT`)
-* **Escenario:** Si se intenta eliminar un vivero que posee zonas operativas asignadas, PostgreSQL debe abortar la operación bloqueando el borrado para evitar inconsistencias en cascada en la infraestructura física.
-* **Prueba en terminal interactiva `psql`:**
+
+Si se intenta eliminar un vivero que posee zonas operativas asignadas, PostgreSQL debe abortar la operación bloqueando el borrado para evitar inconsistencias en cascada en la infraestructura física.
+
+**Prueba en terminal interactiva `psql`:**
 ```
 viveros=# DELETE FROM vivero WHERE id_vivero = 1;
 ERROR:  update or delete on table "vivero" violates RESTRICT setting of foreign key constraint "fk_zona_vivero" on table "zona"
@@ -314,7 +316,9 @@ DETAIL:  Key (id_vivero)=(1) is referenced from table "zona".
 ```
 
 ### 6.3. Ejemplo 3: Borrado en Jerarquía y Entidad Débil (`ON DELETE CASCADE`)
-* **Escenario:** Cuando un cliente general se da de baja, se eliminan en cascada sus registros dependientes en `cliente_plus` y sus bonificaciones acumuladas en `bonificacion`:
+
+Cuando un cliente general se da de baja, se eliminan en cascada sus registros dependientes en `cliente_plus` y sus bonificaciones acumuladas en `bonificacion`:
+
 ```sql
 INSERT INTO cliente (dni, nombre, apellidos, telefono, email)
 VALUES ('99999999K', 'Cliente', 'Temporal Borrado', '+34699999999', 'temp@tajinaste.com');
