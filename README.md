@@ -11,7 +11,7 @@
 
 ![Modelo Entidad-Relación](Entidad-Relacion-Viveros.png)
 
-* 📄 **Diagrama drawio:** [Entidad-Relacion-Viveros.drawio](Entidad-Relacion-Viveros.drawio)
+- **Diagrama drawio:** [Entidad-Relacion-Viveros.drawio](Entidad-Relacion-Viveros.drawio)
 
 ### 1.2. Modelo Relacional (Lógico)
 
