@@ -395,17 +395,25 @@ COMMIT;
 
 -- ============================================================================
 -- EJEMPLO 1: DEMOSTRACIÓN DE BORRADO EN CASCADA (ON DELETE CASCADE)
--- Escenario: Al eliminar un pedido, sus líneas asociadas en 'detalle_pedido'
--- se eliminan automáticamente sin dejar registros huérfanos.
+-- Escenario: Insertamos un pedido temporal de prueba (id_pedido = 9999) con
+-- sus líneas de detalle. Al eliminar el pedido, sus líneas en 'detalle_pedido'
+-- se eliminan automáticamente sin dejar huérfanos, preservando intactos
+-- todos los pedidos originales del catálogo (1001 a 1006).
 -- ============================================================================
--- Comprobación previa de líneas existentes para el pedido 1005:
--- SELECT * FROM detalle_pedido WHERE id_pedido = 1005;
+INSERT INTO "pedido" ("id_pedido", "dni_cliente_plus", "dni_empleado_responsable", "fecha", "estado")
+VALUES (9999, '78912345T', '42345678Z', '2024-05-01 10:00:00', 'Pendiente');
 
-DELETE FROM pedido WHERE id_pedido = 1005;
+INSERT INTO "detalle_pedido" ("id_pedido", "id_producto", "cantidad", "precio_unitario_aplicado")
+VALUES 
+  (9999, 'PRD-PLANT-01', 1, 28.50),
+  (9999, 'PRD-DECO-01', 1, 22.00);
 
--- Comprobación posterior (debe devolver 0 filas):
--- SELECT * FROM detalle_pedido WHERE id_pedido = 1005;
--- SELECT * FROM pedido WHERE id_pedido = 1005;
+-- Ejecución del borrado en cascada del pedido temporal:
+DELETE FROM pedido WHERE id_pedido = 9999;
+
+-- Comprobación (ambas consultas devuelven 0 filas confirmando el borrado en cascada):
+-- SELECT * FROM pedido WHERE id_pedido = 9999;
+-- SELECT * FROM detalle_pedido WHERE id_pedido = 9999;
 
 
 -- ============================================================================

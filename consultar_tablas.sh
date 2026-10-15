@@ -1,9 +1,4 @@
 #!/bin/bash
-# ============================================================================
-# Práctica 4: Salidas formateadas de los SELECT de todas las tablas
-# Base de datos: viveros
-# Asignatura: Administración y Diseño de Bases de Datos (ADBD) - ULL
-# ============================================================================
 
 DB="viveros"
 
@@ -24,8 +19,7 @@ TABLAS=(
 )
 
 echo "================================================================================"
-echo "         SALIDAS DE LOS SELECT DE CADA TABLA (BASE DE DATOS: $DB)"
-echo "================================================================================"
+echo "         SALIDAS DE LOS SELECT DE CADA TABLA (BASE DE DATOS: Viveros)"
 echo ""
 
 for tabla in "${TABLAS[@]}"; do
